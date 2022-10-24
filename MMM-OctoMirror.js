@@ -8,7 +8,7 @@
  * MIT Licensed.
  */
 
-Module.register("octomirror-module", {
+Module.register("MMM-OctoMirror", {
     defaults: {
         updateInterval: 60 * 1000,
         retryDelay: 2500,
@@ -89,8 +89,9 @@ Module.register("octomirror-module", {
 
         if (this.config.showTemps) {
             infoWrapper.innerHTML += `
-                <span>${this.translate("TEMPS")} : ${this.translate("NOZZLE")}: </span><span id="opNozzleTemp" class="title bright">N/A</span>
-                <span> ${this.translate("TARGET")}: (<span id="opNozzleTempTgt">N/A</span><span>) | ${this.translate("BED")}: </span><span id="opBedTemp" class="title bright">N/A</span>
+                <span> ${this.translate("NOZZLE")}: </span><span id="opNozzleTemp" class="title bright">N/A</span>
+                <span> ${this.translate("TARGET")}: (<span id="opNozzleTempTgt">N/A</span>
+                <span>) | ${this.translate("BED")}: </span><span id="opBedTemp" class="title bright">N/A</span>
                 <span> ${this.translate("TARGET")}: (<span id="opBedTempTgt">N/A</span><span>)</span>
                 </div>
                 `;
@@ -113,27 +114,16 @@ Module.register("octomirror-module", {
     },
 
     initializeSocket: function() {
-        var self = this;
+        this.opClient.socket.connect();
+        this.opClient.browser.passiveLogin()
+            .done((response)=>{
+                    if (this.config.debugMode) { console.log("Octoprint login response:",response); }
+                    this.opClient.socket.sendAuth(response.name, response.session);
+            });
 
-        let user = "_api", session = "";
 
-        $.ajax({
-            url: this.config.url + "/api/login",
-            type: 'post',
-            data: { passive: true },
-            headers: {
-                "X-Api-Key": this.config.api_key
-            },
-            dataType: 'json',
-        }).done((data)=>{
-            if (this.config.debugMode) { console.log("Octoprint login response:",data); }
-            session = data.session;
-            // Subscribe to live push updates from the server
-            this.opClient.socket.connect();
-        });
-
-        this.opClient.socket.onMessage("connected", (message) => {
-            this.opClient.socket.socket.send(JSON.stringify({ auth: `${user}:${session}`}));
+        this.opClient.socket.onMessage("connected", (session) => {
+            this.opClient.socket.sendAuth(session.name, session.session);
         });
 
         if (this.config.debugMode) {
@@ -244,10 +234,10 @@ Module.register("octomirror-module", {
             if (!this.config.showDetailsWhenOffline) { $("#opMoreInfo").hide(); }
         } else if (data.state.flags.ready) {
             icon.innerHTML = `<i class="fa fa-check-circle" aria-hidden="true" style="color:green;"></i>`;
-            if (!this.config.showDetailsWhenOffline) { $("#opMoreInfo").show(); }
+            if (!this.config.showDetailsWhenOffline) { $("#opMoreInfo").hide(); }
         } else if (data.state.flags.operational) {
             icon.innerHTML = `<i class="fa fa-check-circle" aria-hidden="true" style="color:green;"></i>`;
-            if (!this.config.showDetailsWhenOffline) { $("#opMoreInfo").show(); }
+            if (!this.config.showDetailsWhenOffline) { $("#opMoreInfo").hide(); }
         }
 
         $("#opFile")[0].textContent = (data.job.file.name) ? data.job.file.name : "N/A";
