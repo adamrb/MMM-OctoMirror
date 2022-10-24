@@ -114,17 +114,20 @@ Module.register("MMM-OctoMirror", {
     },
 
     initializeSocket: function() {
+        this.session = "";
         this.opClient.socket.connect();
-        this.opClient.browser.passiveLogin()
-            .done((response)=>{
+        $.ajax({}).done(()=>{
+            this.opClient.browser.passiveLogin().done((response)=>{
                     if (this.config.debugMode) { console.log("Octoprint login response:",response); }
+                    this.session = response;
                     this.opClient.socket.sendAuth(response.name, response.session);
             });
-
-
-        this.opClient.socket.onMessage("connected", (session) => {
-            this.opClient.socket.sendAuth(session.name, session.session);
         });
+
+        // this.opClient.socket.onMessage("connected", (session) => {
+        //     console.log("Session:",session);
+        //     this.opClient.socket.sendAuth(session.name, session.session);
+        // });
 
         if (this.config.debugMode) {
             this.opClient.socket.onMessage("*", (message) => {
