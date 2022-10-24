@@ -20,6 +20,7 @@ Module.register("octomirror-module", {
         showDetailsWhenOffline: true,
         interactive: true, // Set to false to hide the file drop down and only show the stream.
         debugMode: false, // Set to true to log all messages from OctoPrint Socket
+        showOnlyWhilePrinting: false,
     },
 
     //Override dom generator.
@@ -266,6 +267,13 @@ Module.register("octomirror-module", {
                 $("#opBedTemp")[0].innerHTML = (temps.bed.actual) ? temps.bed.actual.round10(1) + "&deg;C" : "N/A";
                 $("#opBedTempTgt")[0].innerHTML = (temps.bed.target) ? Math.round(temps.bed.target) + "&deg;C" : "N/A";
             }
+        }
+        
+        if (data.state.text != "Printing" & this.config.showOnlyWhilePrinting){
+            this.hide();
+        }
+        else { 
+            this.show();
         }
     },
 
